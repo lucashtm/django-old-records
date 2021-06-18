@@ -6,7 +6,7 @@ A simple Django app with tools to manage old records of Django models
 
 `pip install django-old-records`
 
-Add `django_old_records` to your project `INSTALLED_APPS`
+Add `django_old_records` to your project's `INSTALLED_APPS`
 ## Usage
 
 There is a manager that decides if a record is too old based on a date field (`created_at` by default) and a `max_age`. Ex.:
