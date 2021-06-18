@@ -63,6 +63,6 @@ class Cat(models.Model):
 
     old_records = OldRecordsManager()
 ```
-There is also a management command that deletes all old records from all models:
+There is also a management command that deletes all old records from all models with the `old_records` manager:
 
 `python manage.py delete_old_records`
