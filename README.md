@@ -59,10 +59,10 @@ class Cat(models.Model):
     was_born = models.DateTimeField(auto_now_add=True)
 
     created_at_field = 'was_born'
-    max_age = timedelta(hours=4, seconds=20)
+    max_age = 365 * 20 # 20 years
 
     old_records = OldRecordsManager()
 ```
-There is also a management command that deletes all old records from all models:
+There is also a management command that deletes all old records from all models with the `old_records` manager:
 
 `python manage.py delete_old_records`
