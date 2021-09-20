@@ -1,6 +1,7 @@
 from django.db import models
 from datetime import datetime, timedelta
 from django.conf import settings
+from django.utils import timezone
 
 class OldRecordsManager(models.Manager):
     DEFAULT_CREATED_AT_FIELD = getattr(settings, 'OLD_RECORDS_DEFAULT_CREATED_AT_FIELD', 'created_at')
@@ -19,8 +20,8 @@ class OldRecordsManager(models.Manager):
 
     def get_queryset(self):
         if not (hasattr(self.model, self._created_at_field()) and self._max_age_timedelta()):
-            return self.none()
+            return super().get_queryset().none()
 
-        time_limit = datetime.now() - self._max_age_timedelta()
+        time_limit = timezone.now() - self._max_age_timedelta()
         filter_key = f'{self._created_at_field()}__lte'
         return super().get_queryset().filter(**{filter_key: time_limit})
