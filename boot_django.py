@@ -19,6 +19,7 @@ def boot_django():
             }
         },
         INSTALLED_APPS=(
+            "django.contrib.contenttypes",
             "django_old_records",
         ),
         TIME_ZONE="UTC",
