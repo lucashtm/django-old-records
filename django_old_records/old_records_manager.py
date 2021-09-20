@@ -1,9 +1,10 @@
 from django.db import models
 from datetime import datetime, timedelta
+from django.conf import settings
 
 class OldRecordsManager(models.Manager):
-    DEFAULT_CREATED_AT_FIELD = 'created_at'
-    DEFAULT_MAX_AGE = None
+    DEFAULT_CREATED_AT_FIELD = getattr(settings, 'OLD_RECORDS_DEFAULT_CREATED_AT_FIELD', 'created_at')
+    DEFAULT_MAX_AGE = getattr(settings, 'OLD_RECORDS_DEFAULT_MAX_AGE', None)
 
     def _created_at_field(self):
         return getattr(self.model, 'created_at_field', self.DEFAULT_CREATED_AT_FIELD)
