@@ -23,10 +23,9 @@ class Command(BaseCommand):
             model_config = ModelConfig.objects.get(content_type=content_type)
             model = content_type.model_class()
             if hasattr(model, 'old_records') and isinstance(model.old_records, OldRecordsManager):
-                if model_config.mode == ModelConfig.Modes.DELETE:
-                    self.stdout.write(f'Deleting {model.old_records.count()} {model} old records')
-                    model.old_records.all().delete()
-                if model_config.mode == ModelConfig.Modes.EXPORT:
-                    self.stdout.write(f'Exporting {model.old_records.count()} {model} old records')
-                    QuerySetCSVExporter(model.old_records.all(), f'{model._meta.app_label}_{model._meta.model_name}_old_records.csv').export()
-                    model.old_records.all().delete()
+                self.stdout.write(f'Deleting {model.old_records.count()} {model._meta.app_label}.{model.__name__} old records')
+                if model_config.export:
+                    filename = f'{model._meta.app_label}_{model._meta.model_name}_old_records.csv'
+                    QuerySetCSVExporter(model.old_records.all(), filename).export()
+                    self.stdout.write(f'Exported deleted records to {filename}')
+                model.old_records.all().delete()

@@ -19,18 +19,14 @@ def limit_choices_to():
     return query_filter
 
 class ModelConfig(models.Model):
-    class Modes(models.IntegerChoices):
-        DELETE = 0
-        EXPORT = 1
 
-    content_type = models.ForeignKey(
+    content_type = models.OneToOneField(
         ContentType,
         limit_choices_to=limit_choices_to,
         on_delete=models.CASCADE,
-        unique=True,
     )
     max_age = models.DurationField()
-    mode = models.IntegerField(choices=Modes.choices, default=Modes.DELETE)
+    export = models.BooleanField(default=False)
 
     def __str__(self):
         return self.content_type.model_class().__name__
