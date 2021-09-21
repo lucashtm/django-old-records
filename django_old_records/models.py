@@ -27,6 +27,9 @@ class ModelConfig(models.Model):
     )
     max_age = models.DurationField()
 
+    def __str__(self):
+        return self.content_type.model_class().__name__
+
 class FieldConfig(models.Model):
 
     model_config = models.ForeignKey('ModelConfig', on_delete=models.CASCADE)
