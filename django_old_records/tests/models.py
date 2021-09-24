@@ -16,3 +16,13 @@ class ModelWithConfig(models.Model):
 
     objects = models.Manager()
     old_records = OldRecordsManager()
+
+class ModelWithNoCreatedAt(models.Model):
+    max_age = timedelta(seconds=20)
+    objects = models.Manager()
+    old_records = OldRecordsManager()
+
+class ModelWithNoMaxAge(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    objects = models.Manager()
+    old_records = OldRecordsManager()
