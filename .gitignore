@@ -6,3 +6,4 @@ build
 sample_project
 htmlcov
 .coverage
+db.sqlite3
