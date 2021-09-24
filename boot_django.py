@@ -21,7 +21,9 @@ def boot_django():
         INSTALLED_APPS=(
             "django.contrib.contenttypes",
             "django_old_records",
+            "django_old_records.tests",
         ),
+        DEFAULT_AUTO_FIELD='django.db.models.BigAutoField',
         TIME_ZONE="UTC",
         USE_TZ=True,
     )
