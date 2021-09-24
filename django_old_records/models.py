@@ -25,7 +25,7 @@ class ModelConfig(models.Model):
         limit_choices_to=limit_choices_to,
         on_delete=models.CASCADE,
     )
-    max_age = models.DurationField()
+    max_age = models.DurationField(null=True, blank=True)
     export = models.BooleanField(default=False)
 
     def __str__(self):
