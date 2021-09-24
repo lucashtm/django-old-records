@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 from django.db.models import Q
+from django.apps import apps
 
 class OldRecordsManager(models.Manager):
     DEFAULT_CREATED_AT_FIELD = getattr(settings, 'OLD_RECORDS_DEFAULT_CREATED_AT_FIELD', 'created_at')
@@ -21,6 +22,13 @@ class OldRecordsManager(models.Manager):
         content_type = ContentType.objects.get_for_model(self.model)
         return ModelConfig.objects.filter(content_type=content_type).prefetch_related('fieldconfig_set').first()
 
+    def _model_config_max_age(self):
+        return self.model_config.max_age if self.model_config else None
+
+    def _model_config_field_configs(self):
+        model = apps.get_model(app_label='django_old_records', model_name='FieldConfig')
+        return self.model_config.fieldconfig_set.all() if self.model_config else model.objects.none()
+
     def _default_max_age(self):
         max_age = getattr(self.model, 'max_age', self.DEFAULT_MAX_AGE)
         if isinstance(max_age, int):
@@ -37,9 +45,9 @@ class OldRecordsManager(models.Manager):
         return Q(**{field_config.field_name: field_config.value}), Q(**{self.created_at_lookup(): time_limit})
 
     def _build_filter_query(self):
-        model_max_age = self.model_config.max_age if self.model_config.max_age else self._default_max_age()
-        model_time_limit =  timezone.now() - model_max_age
-        field_configs = self.model_config.fieldconfig_set.all()
+        model_max_age = self._model_config_max_age() if self._model_config_max_age() else self._default_max_age()
+        model_time_limit =  timezone.now() - model_max_age if model_max_age else None
+        field_configs = self._model_config_field_configs()
         field_filter_query = None
         model_filter_query = None
 
@@ -64,14 +72,10 @@ class OldRecordsManager(models.Manager):
         return field_filter_query
 
     def get_queryset(self):
-
         if not hasattr(self.model, self._created_at_field()):
             return super().get_queryset().none()
 
         self._initialize()
-
-        if not self.model_config:
-            return super().get_queryset().none()
 
         query = self._build_filter_query()
         if query:
