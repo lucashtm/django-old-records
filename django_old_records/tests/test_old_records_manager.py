@@ -4,7 +4,8 @@ from django.test import TestCase
 from unittest.mock import Mock
 from django.contrib.contenttypes.models import ContentType
 from django_old_records.models import ModelConfig, FieldConfig
-from django_old_records.tests.models import HardCodedModel, ModelWithConfig, ModelWithNoCreatedAt, ModelWithNoMaxAge
+from django_old_records.tests.models import HardCodedModel, ModelWithConfig, ModelWithNoCreatedAt, ModelWithNoMaxAge, \
+    ModelWithIntegerMaxAge
 from random import randint
 
 class OldRecordsManagerTest(TestCase):
@@ -17,26 +18,40 @@ class OldRecordsManagerTest(TestCase):
         content_type = ContentType.objects.get_for_model(ModelWithNoMaxAge)
         self.assertEqual(ModelConfig.objects.filter(content_type=content_type).count(), 0)
         self.assertRaises(AttributeError, lambda: ModelWithNoMaxAge.max_age)
+        self.assertEqual(ModelWithNoMaxAge.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + timedelta(days=365*10))
         self.assertEqual(ModelWithNoMaxAge.old_records.count(), 0)
 
     def test_model_with_no_created_at_field_does_not_return_old_records(self):
         ModelWithNoCreatedAt.objects.create()
+        self.assertEqual(ModelWithNoCreatedAt.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + ModelWithNoCreatedAt.max_age)
         self.assertEqual(ModelWithNoCreatedAt.old_records.count(), 0)
 
-    def test_hard_coded(self):
+    def test_hard_coded_max_age(self):
         HardCodedModel.objects.create()
+        self.assertEqual(HardCodedModel.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + HardCodedModel.max_age)
         HardCodedModel.objects.create()
         self.assertEqual(HardCodedModel.objects.count(), 2)
         self.assertEqual(HardCodedModel.old_records.count(), 1)
 
+    def test_hard_coded_max_age_as_integer_translates_to_days(self):
+        ModelWithIntegerMaxAge.objects.create()
+        self.assertEqual(HardCodedModel.old_records.count(), 0)
+        timezone.now = Mock(return_value=timezone.now() + timedelta(days=ModelWithIntegerMaxAge.max_age-1))
+        self.assertEqual(HardCodedModel.old_records.count(), 0)
+        timezone.now = Mock(return_value=self._timezone_now() + timedelta(days=ModelWithIntegerMaxAge.max_age))
+        ModelWithIntegerMaxAge.objects.create()
+        self.assertEqual(ModelWithIntegerMaxAge.objects.count(), 2)
+        self.assertEqual(ModelWithIntegerMaxAge.old_records.count(), 1)
+
     def test_model_config(self):
         content_type = ContentType.objects.get_for_model(ModelWithConfig)
-        model_config = ModelConfig(content_type=content_type, max_age=timedelta(seconds=randint(1, 100)))
+        model_config = ModelConfig(content_type=content_type, max_age=timedelta(seconds=randint(10, 100)))
         model_config.save()
         ModelWithConfig.objects.create()
+        self.assertEqual(ModelWithConfig.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + model_config.max_age)
         ModelWithConfig.objects.create()
         self.assertEqual(ModelWithConfig.objects.count(), 2)
@@ -45,7 +60,7 @@ class OldRecordsManagerTest(TestCase):
     def test_field_configs(self):
         content_type = ContentType.objects.get_for_model(ModelWithConfig)
         model_config = ModelConfig.objects.create(content_type=content_type)
-        boolean_max_age = timedelta(seconds=randint(1, 100))
+        boolean_max_age = timedelta(seconds=randint(10, 100))
         field_config = FieldConfig.objects.create(
             model_config=model_config,
             field_name='boolean_field',
@@ -54,6 +69,7 @@ class OldRecordsManagerTest(TestCase):
         )
         ModelWithConfig.objects.create(boolean_field=False)
         ModelWithConfig.objects.create()
+        self.assertEqual(ModelWithConfig.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + field_config.max_age)
         ModelWithConfig.objects.create(boolean_field=False)
         self.assertEqual(ModelWithConfig.objects.count(), 3)
@@ -78,6 +94,7 @@ class OldRecordsManagerTest(TestCase):
         )
         ModelWithConfig.objects.create(integer_field=1)
         ModelWithConfig.objects.create(boolean_field=False)
+        self.assertEqual(ModelWithConfig.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + integer_field_config.max_age)
         ModelWithConfig.objects.create(integer_field=1)
         self.assertEqual(ModelWithConfig.objects.count(), 3)
@@ -97,6 +114,7 @@ class OldRecordsManagerTest(TestCase):
         )
         ModelWithConfig.objects.create(boolean_field=False)
         ModelWithConfig.objects.create()
+        self.assertEqual(ModelWithConfig.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + field_config.max_age)
         self.assertEqual(ModelWithConfig.objects.count(), 2)
         self.assertEqual(ModelWithConfig.old_records.count(), 1)
@@ -108,6 +126,7 @@ class OldRecordsManagerTest(TestCase):
         model_config = ModelConfig.objects.create(content_type=content_type, max_age=timedelta(seconds=30))
         self.assertGreater(model_config.max_age, HardCodedModel.max_age)
         HardCodedModel.objects.create()
+        self.assertEqual(HardCodedModel.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + HardCodedModel.max_age)
         self.assertEqual(HardCodedModel.old_records.count(), 0)
         timezone.now = Mock(return_value=self._timezone_now() + model_config.max_age)
@@ -124,6 +143,7 @@ class OldRecordsManagerTest(TestCase):
         )
         self.assertGreater(field_config.max_age, HardCodedModel.max_age)
         HardCodedModel.objects.create(boolean_field=False)
+        self.assertEqual(HardCodedModel.old_records.count(), 0)
         timezone.now = Mock(return_value=timezone.now() + HardCodedModel.max_age)
         self.assertEqual(HardCodedModel.old_records.count(), 0)
         timezone.now = Mock(return_value=self._timezone_now() + field_config.max_age)

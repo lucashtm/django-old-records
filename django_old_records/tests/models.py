@@ -26,3 +26,10 @@ class ModelWithNoMaxAge(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()
     old_records = OldRecordsManager()
+
+class ModelWithIntegerMaxAge(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    boolean_field = models.BooleanField(default=True)
+    max_age = 5
+    objects = models.Manager()
+    old_records = OldRecordsManager()
